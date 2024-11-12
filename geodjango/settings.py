@@ -42,6 +42,11 @@ INSTALLED_APPS = [
     "rest_framework_gis",
     # Local Apps
     "world",
+    "jalan",
+    "batas_wilayah",
+    "sekolah",
+    "peserta_didik",
+    "project",
 ]
 
 MIDDLEWARE = [
