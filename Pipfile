@@ -10,6 +10,7 @@ django-environ = "*"
 djangorestframework = "*"
 djangorestframework-gis = "*"
 geopandas = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 
