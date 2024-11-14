@@ -10,6 +10,7 @@ class BatasWilayahMetadataSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "description",
+            "bbox",
             "created_at",
             "updated_at",
         )

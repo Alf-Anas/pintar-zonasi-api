@@ -1,7 +1,7 @@
 import geopandas as gpd
 from rest_framework import generics, status
 from rest_framework.response import Response
-from django.contrib.gis.geos import MultiPolygon
+from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.contrib.gis.geos import GEOSGeometry
 from shapely.geometry import MultiPolygon
 from .models import BatasWilayah, BatasWilayahMetadata
@@ -15,7 +15,7 @@ from shapely.wkb import dumps, loads
 
 
 class BatasWilayahMetadataList(generics.ListAPIView):
-    queryset = BatasWilayahMetadata.objects.all()
+    queryset = BatasWilayahMetadata.objects.all().order_by("created_at")
     serializer_class = BatasWilayahMetadataSerializer
 
 
@@ -109,7 +109,7 @@ class BatasWilayahUpload(generics.CreateAPIView):
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    def process_file(self, file_path, metadata):
+    def process_file(self, file_path, metadata: BatasWilayahMetadata):
         """
         Process the extracted file and load data into the BatasWilayah model.
         """
@@ -117,6 +117,10 @@ class BatasWilayahUpload(generics.CreateAPIView):
 
         if gdf.crs is not None and gdf.crs.to_epsg() != 4326:
             gdf = gdf.to_crs(epsg=4326)
+
+        total_bbox = gdf.total_bounds
+        metadata.bbox = Polygon.from_bbox(total_bbox)
+        metadata.save()
 
         for _, row in gdf.iterrows():
 
