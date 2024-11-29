@@ -13,6 +13,7 @@
 
 ### CheatSheet
 
+- Must go inside PIPENV Shell
 - Run project `python manage.py runserver`
 - DB Migration `python manage.py migrate`
 - Create module `python manage.py startapp module_name`

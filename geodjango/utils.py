@@ -1,6 +1,9 @@
 import os
 import tempfile
 import zipfile
+import csv
+import io
+from django.contrib.gis.geos import Polygon
 
 
 def is_valid_geospatial_file(file):
@@ -55,3 +58,46 @@ def find_shapefile_path(temp_dir):
 
     # If no shapefile is found, raise an error
     raise FileNotFoundError("No shapefile (.shp) found in the directory.")
+
+
+def csv_to_dict(file):
+    """
+    This function reads a CSV file (file object), removes empty rows, and returns its contents as a list of dictionaries.
+    Each dictionary represents a row in the CSV file, where the keys are the column headers.
+
+    :param file: A file-like object (such as an uploaded file)
+    :return: List of dictionaries (with empty rows removed)
+    """
+    file_content = file.read().decode("utf-8")  # Decode the byte content to a string
+    file_io = io.StringIO(file_content)
+    # Create a CSV DictReader object to read rows as dictionaries
+    reader = csv.DictReader(file_io)
+
+    # Filter out rows that are empty (i.e., where all values are empty or None)
+    data = [row for row in reader if any(value.strip() for value in row.values())]
+    return data
+
+
+def calculate_bbox_from_csv_points(csv_data):
+    # Initialize variables to track min and max lat, lon
+    min_lat = float("inf")
+    max_lat = float("-inf")
+    min_lon = float("inf")
+    max_lon = float("-inf")
+
+    # Loop through the CSV data
+    for row in csv_data:
+        lat = round(
+            float(row["lat"]), 6
+        )  # Assuming 'lat' is a string and needs to be converted to float
+        lon = round(float(row["lon"]), 6)  # Same for 'lon'
+
+        # Update the min/max lat, lon
+        min_lat = min(min_lat, lat)
+        max_lat = max(max_lat, lat)
+        min_lon = min(min_lon, lon)
+        max_lon = max(max_lon, lon)
+
+    # Calculate the bounding box using the min/max lat, lon values
+    bbox = Polygon.from_bbox((min_lon, min_lat, max_lon, max_lat))
+    return bbox
