@@ -35,7 +35,9 @@ class SekolahListByMetadataId(generics.RetrieveAPIView):
         metadata_instance = self.get_object()
 
         # Retrieve the Sekolah instances that correspond to the metadata_id
-        sekolah_queryset = Sekolah.objects.filter(file_metadata=metadata_instance)
+        sekolah_queryset = Sekolah.objects.filter(
+            file_metadata=metadata_instance
+        ).order_by("created_at")
 
         # Serialize the Sekolah instances
         sekolah_serializer = SekolahDetailSerializer(sekolah_queryset, many=True)
@@ -91,11 +93,8 @@ class SekolahUpload(generics.CreateAPIView):
 
         # Process the file
         try:
-            print("AAAAA")
             csv_data = csv_to_dict(file)
-            print("BBBBBB")
             bbox = calculate_bbox_from_csv_points(csv_data)
-            print("CCCCCC")
             # Save metadata (name, description) to the SekolahMetadata model
             metadata = SekolahMetadata.objects.create(
                 name=name, level=level, type=type, description=description, bbox=bbox
@@ -126,6 +125,158 @@ class SekolahUpload(generics.CreateAPIView):
                 status=status.HTTP_201_CREATED,
             )
 
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class SekolahDatumDelete(generics.DestroyAPIView):
+    serializer_class = SekolahDetailSerializer
+
+    def get_queryset(self):
+        # Get the metadata_id and id from the URL
+        metadata_id = self.kwargs.get("metadata_id")
+        pk = self.kwargs.get("pk")
+        # Filter the Sekolah objects by file_metadata_id and id
+        return Sekolah.objects.filter(file_metadata_id=metadata_id, id=pk)
+
+
+class SekolahDatumAdd(generics.CreateAPIView):
+    """
+    API view to add datum sekolah
+    """
+
+    def post(self, request, *args, **kwargs):
+        # Get the metadata
+        metadata_id = self.kwargs.get("pk")
+
+        # Retrieve the metadata instance
+        try:
+            metadata = SekolahMetadata.objects.get(id=metadata_id)
+        except SekolahMetadata.DoesNotExist:
+            return Response(
+                {"error": "Metadata not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        data = request.data
+        required_fields = ["tipe", "npsn", "nama", "lat", "lon", "kuota"]
+
+        # Check for missing required fields
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        if missing_fields:
+            return Response(
+                {"error": f"Missing fields: {', '.join(missing_fields)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Process the data
+        try:
+            lat = round(float(data["lat"]), 6)
+            lon = round(float(data["lon"]), 6)
+
+            # Create and save the Point to the database
+            point = Point(lon, lat)
+            sekolah = Sekolah(
+                tipe=data["tipe"],
+                npsn=data["npsn"],
+                nama=data["nama"],
+                alamat=data.get("alamat", ""),
+                kuota=int(data["kuota"]),
+                keterangan=data.get("keterangan", ""),
+                lat=lat,
+                lon=lon,
+                point=point,
+                file_metadata=metadata,
+            )
+            sekolah.save()
+
+            return Response(
+                {
+                    "message": "Datum sekolah added successfully.",
+                    "sekolah_id": sekolah.id,
+                    "metadata_id": metadata_id,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        except ValueError as ve:
+            return Response(
+                {"error": f"Invalid value: {ve}"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class SekolahDatumEdit(generics.RetrieveAPIView):
+    """
+    API view to edit datum sekolah
+    """
+
+    def put(self, request, *args, **kwargs):
+        # Get the uploaded file and metadata
+        metadata_id = self.kwargs.get("metadata_id")
+        sekolah_id = self.kwargs.get("pk")
+
+        # Retrieve the metadata instance
+        try:
+            metadata = SekolahMetadata.objects.get(id=metadata_id)
+        except SekolahMetadata.DoesNotExist:
+            return Response(
+                {"error": "Metadata not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Retrieve the Sekolah instance
+        try:
+            sekolah = Sekolah.objects.get(id=sekolah_id, file_metadata=metadata)
+        except Sekolah.DoesNotExist:
+            return Response(
+                {"error": "Sekolah not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        data = request.data
+        required_fields = ["tipe", "npsn", "nama", "lat", "lon", "kuota"]
+
+        # Check for missing required fields
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        if missing_fields:
+            return Response(
+                {"error": f"Missing fields: {', '.join(missing_fields)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Process the data
+        try:
+            lat = round(float(data["lat"]), 6)
+            lon = round(float(data["lon"]), 6)
+
+            # Update the Sekolah instance
+            sekolah.tipe = data["tipe"]
+            sekolah.npsn = data["npsn"]
+            sekolah.nama = data["nama"]
+            sekolah.alamat = data.get("alamat", "")
+            sekolah.kuota = int(data["kuota"])
+            sekolah.keterangan = data.get("keterangan", "")
+            sekolah.lat = lat
+            sekolah.lon = lon
+            sekolah.point = Point(lon, lat)  # Update the Point field
+            sekolah.save()
+
+            return Response(
+                {
+                    "message": "Datum sekolah added successfully.",
+                    "sekolah_id": sekolah.id,
+                    "metadata_id": metadata_id,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        except ValueError as ve:
+            return Response(
+                {"error": f"Invalid value: {ve}"}, status=status.HTTP_400_BAD_REQUEST
+            )
         except Exception as e:
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR

@@ -6,6 +6,9 @@ from .views import (
     SekolahMetadataDetail,
     SekolahUpload,
     SekolahMetadataDelete,
+    SekolahDatumDelete,
+    SekolahDatumAdd,
+    SekolahDatumEdit,
 )
 
 urlpatterns = [
@@ -34,5 +37,20 @@ urlpatterns = [
         "sekolah/detail/<int:pk>/",
         SekolahDetail.as_view(),
         name="sekolah-detail",
+    ),
+    path(
+        "sekolah/delete/<str:metadata_id>/<int:pk>/",
+        SekolahDatumDelete.as_view(),
+        name="sekolah-delete-datum",
+    ),
+    path(
+        "sekolah/add/<str:pk>/",
+        SekolahDatumAdd.as_view(),
+        name="sekolah-add-datum",
+    ),
+    path(
+        "sekolah/edit/<str:metadata_id>/<int:pk>/",
+        SekolahDatumEdit.as_view(),
+        name="sekolah-edit-datum",
     ),
 ]
