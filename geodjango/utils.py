@@ -4,6 +4,7 @@ import zipfile
 import csv
 import io
 from django.contrib.gis.geos import Polygon
+from datetime import datetime
 
 
 def is_valid_geospatial_file(file):
@@ -101,3 +102,14 @@ def calculate_bbox_from_csv_points(csv_data):
     # Calculate the bounding box using the min/max lat, lon values
     bbox = Polygon.from_bbox((min_lon, min_lat, max_lon, max_lat))
     return bbox
+
+
+def parse_date(date_str):
+    """Try parsing a date string with multiple formats."""
+    formats = ["%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d"]
+    for fmt in formats:
+        try:
+            return datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            continue
+    return None

@@ -23,4 +23,5 @@ urlpatterns = [
     path("api/", include("world.urls")),
     path("api/", include("batas_wilayah.urls")),
     path("api/", include("sekolah.urls")),
+    path("api/", include("peserta_didik.urls")),
 ]
