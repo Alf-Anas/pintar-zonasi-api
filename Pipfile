@@ -11,6 +11,7 @@ djangorestframework = "*"
 djangorestframework-gis = "*"
 geopandas = "*"
 django-cors-headers = "*"
+requests = "*"
 
 [dev-packages]
 

@@ -5,6 +5,13 @@ import csv
 import io
 from django.contrib.gis.geos import Polygon
 from datetime import datetime
+import requests
+from requests.auth import HTTPBasicAuth
+import environ
+
+# Initialize environment variables
+env = environ.Env()
+environ.Env.read_env()
 
 
 def is_valid_geospatial_file(file):
@@ -113,3 +120,71 @@ def parse_date(date_str):
         except ValueError:
             continue
     return None
+
+
+def create_geoserver_layer(layer_name, table_name):
+    """Create Geoserver layer dynamically"""
+
+    geoserver_username = env("GEOSERVER_USERNAME", default="")
+    geoserver_password = env("GEOSERVER_PASSWORD", default="")
+    geoserver_url = env("GEOSERVER_URL", default="")
+    geoserver_workspace = env("GEOSERVER_WORKSPACE", default="")
+    geoserver_store = env("GEOSERVER_STORE", default="")
+
+    layer_data = {
+        "featureType": {
+            "name": layer_name,
+            "nativeName": table_name,  # The table name in your PostGIS database
+            "srs": "EPSG:4326",  # Coordinate reference system (can be modified)
+            "store": {
+                "@class": "dataStore",
+                "name": f"{geoserver_workspace}:{geoserver_store}",
+            },
+            "enabled": True,
+        }
+    }
+
+    # Add the layer
+    response = requests.post(
+        f"{geoserver_url}/workspaces/{geoserver_workspace}/datastores/{geoserver_store}/featuretypes",
+        auth=HTTPBasicAuth(geoserver_username, geoserver_password),
+        json=layer_data,
+        headers={"Content-Type": "application/json"},
+    )
+
+    if response.status_code == 201:
+        return {
+            "success": True,
+            "message": f"Layer '{layer_name}' created successfully!",
+        }
+    else:
+        return {
+            "success": False,
+            "message": f"Error creating layer: {response.text}",
+        }
+
+
+def delete_geoserver_layer(layer_name):
+    """Delete Geoserver layer dynamically"""
+
+    geoserver_username = env("GEOSERVER_USERNAME", default="")
+    geoserver_password = env("GEOSERVER_PASSWORD", default="")
+    geoserver_url = env("GEOSERVER_URL", default="")
+
+    # Delete the layer
+    response = requests.delete(
+        f"{geoserver_url}/layers/{layer_name}?recurse=true",
+        auth=HTTPBasicAuth(geoserver_username, geoserver_password),
+        headers={"Content-Type": "application/json"},
+    )
+
+    if response.status_code == 200:
+        return {
+            "success": True,
+            "message": f"Layer '{layer_name}' deleted!",
+        }
+    else:
+        return {
+            "success": False,
+            "message": f"Error deleting layer: {response.text}",
+        }
