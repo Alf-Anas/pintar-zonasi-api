@@ -8,6 +8,10 @@ from datetime import datetime
 import requests
 from requests.auth import HTTPBasicAuth
 import environ
+import json
+import alphashape
+from shapely.geometry import shape, mapping, Point
+import geopandas as gpd
 
 # Initialize environment variables
 env = environ.Env()
@@ -188,3 +192,50 @@ def delete_geoserver_layer(layer_name):
             "success": False,
             "message": f"Error deleting layer: {response.text}",
         }
+
+
+def create_concave_hull(input_polygon, alpha=0.003):
+    """
+    Process concave hull from geojson polygon
+    """
+    geojson_polygon = input_polygon
+
+    # Convert GeoJSON to a Shapely geometry
+    polygon = shape(geojson_polygon)
+    gdf = gpd.GeoDataFrame(geometry=[polygon], crs="EPSG:4326")  # EPSG:4326 is lat/lon
+
+    # Step 2: Reproject to UTM 3857
+    gdf_utm = gdf.to_crs(epsg=3857)
+
+    polygon_utm = gdf_utm.geometry[0]
+    points = list(polygon_utm.exterior.coords)  # Extract points in UTM coordinates
+    for interior in polygon_utm.interiors:
+        points.extend(list(interior.coords))
+
+    # Generate the alpha shape (concave hull)
+    concave_hull = alphashape.alphashape(points, alpha)
+
+    # Step 5: Convert concave hull back to GeoDataFrame
+    concave_hull_gdf = gpd.GeoDataFrame(geometry=[concave_hull], crs=gdf_utm.crs)
+
+    concave_hull_gdf_4326 = concave_hull_gdf.to_crs(epsg=4326)  # Convert back to WGS84
+    # Step 7: Convert the concave hull back to GeoJSON
+    concave_hull_geojson = mapping(concave_hull_gdf_4326.geometry[0])
+
+    return json.dumps(concave_hull_geojson)
+
+
+def geojson_line_length(geometry):
+
+    # Convert GeoJSON to a GeoSeries
+    gdf = gpd.GeoSeries(
+        [shape(geometry)], crs="EPSG:4326"
+    )  # GeoJSON is usually EPSG:4326
+
+    # Reproject to a suitable projected CRS for length calculation (e.g., UTM)
+    gdf_projected = gdf.to_crs("EPSG:3857")  # Adjust the UTM zone as needed
+
+    # Calculate length in meters
+    length_meters = gdf_projected.length[0]
+    length_km = round(length_meters / 1000, 3)
+    return length_km

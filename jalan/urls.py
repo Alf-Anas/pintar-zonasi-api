@@ -5,6 +5,8 @@ from .views import (
     JalanMetadataDelete,
     JalanUpload,
     JalanGenerateTopology,
+    JalanFindIsochrone,
+    JalanFindRoute,
 )
 
 urlpatterns = [
@@ -28,5 +30,15 @@ urlpatterns = [
         "jalan/generate-topology/<str:pk>/",
         JalanGenerateTopology.as_view(),
         name="jalan-generate-topology",
+    ),
+    path(
+        "jalan/route/<str:pk>/",
+        JalanFindRoute.as_view(),
+        name="jalan-find-route",
+    ),
+    path(
+        "jalan/isochrone/<str:pk>/",
+        JalanFindIsochrone.as_view(),
+        name="jalan-find-isochrone",
     ),
 ]

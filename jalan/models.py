@@ -53,12 +53,12 @@ class Jalan(models.Model):
     source = models.IntegerField(blank=True, null=True, default=0)
     target = models.IntegerField(blank=True, null=True, default=0)
     cost = models.DecimalField(
-        blank=True, null=True, default=0, max_digits=10, decimal_places=6
+        blank=True, null=True, default=0, max_digits=15, decimal_places=8
     )
     # properties to save all fields
     properties = models.JSONField()
-    # GeoDjango-specific: a geometry field (MultiLineStringField)
-    mline = models.MultiLineStringField()
+    # GeoDjango-specific: a geometry field (LineStringField)
+    mline = models.LineStringField()
 
     # Returns the string representation of the model.
     def __str__(self):
