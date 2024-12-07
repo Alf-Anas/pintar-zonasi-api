@@ -236,6 +236,11 @@ class JalanUpload(generics.CreateAPIView):
             )
             cursor.execute(
                 f"""
+                CREATE INDEX idx_reverse_cost_{table_name} ON {table_name}(reverse_cost);
+                """
+            )
+            cursor.execute(
+                f"""
                 CREATE INDEX idx_mline_{table_name} ON {table_name} USING GIST(mline);
                 """
             )
@@ -266,12 +271,13 @@ class JalanGenerateTopology(generics.RetrieveAPIView):
             # Update the cost column with the calculated values, Assuming 15 minutes per kilometer
             update_cost_query = f"""
                 UPDATE {road_table}
-                SET cost = (ST_Length(ST_Transform(mline, 3857)) / {speed}) / 60;
+                SET cost = (ST_Length(ST_Transform(mline, 3857)) / {speed}) / 60,
+                    reverse_cost = (ST_Length(ST_Transform(mline, 3857)) / {speed}) / 60;
             """
 
             # Check if source, target, and cost columns are populated
             check_query = f"""
-                SELECT id, source, target, cost
+                SELECT id, source, target, cost, reverse_cost
                 FROM {road_table}
                 WHERE source IS NOT NULL AND target IS NOT NULL AND cost > 0
                 ORDER BY RANDOM()
@@ -361,7 +367,7 @@ class JalanFindRoute(generics.RetrieveAPIView):
                     path AS (
                         SELECT * 
                         FROM pgr_dijkstra(
-                            'SELECT id, source, target, cost, cost AS reverse_cost FROM {road_table}',
+                            'SELECT id, source, target, cost, reverse_cost FROM {road_table}',
                             (SELECT id FROM start_node),
                             (SELECT id FROM end_node),
                             directed := false
@@ -465,7 +471,7 @@ class JalanFindIsochrone(generics.RetrieveAPIView):
                         FROM (
                             SELECT ST_Union(w.mline) AS merged_lines
                             FROM pgr_drivingDistance(
-                                'SELECT id, source, target, cost FROM {road_table}',
+                                'SELECT id, source, target, cost, reverse_cost FROM {road_table}',
                                 (SELECT id FROM start_node),
                                {time}
                             ) AS r

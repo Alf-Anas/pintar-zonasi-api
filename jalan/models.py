@@ -55,6 +55,9 @@ class Jalan(models.Model):
     cost = models.DecimalField(
         blank=True, null=True, default=0, max_digits=15, decimal_places=8
     )
+    reverse_cost = models.DecimalField(
+        blank=True, null=True, default=0, max_digits=15, decimal_places=8
+    )
     # properties to save all fields
     properties = models.JSONField()
     # GeoDjango-specific: a geometry field (LineStringField)
