@@ -488,7 +488,7 @@ class JalanFindIsochrone(generics.RetrieveAPIView):
 
             if result and result[0]:
                 geojson_buffer = json.loads(result[0])
-                concave_geojson = create_concave_hull(geojson_buffer, 0.003, 50)
+                concave_geojson = create_concave_hull(geojson_buffer, 0.003, 20)
 
                 res_concave = {
                     "type": "Feature",

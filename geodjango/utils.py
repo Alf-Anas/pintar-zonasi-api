@@ -194,7 +194,7 @@ def delete_geoserver_layer(layer_name):
         }
 
 
-def create_concave_hull(input_polygon, alpha=0.003):
+def create_concave_hull(input_polygon, alpha=0.003, buffer=0):
     """
     Process concave hull from geojson polygon
     """
@@ -214,9 +214,12 @@ def create_concave_hull(input_polygon, alpha=0.003):
 
     # Generate the alpha shape (concave hull)
     concave_hull = alphashape.alphashape(points, alpha)
+    buffered = concave_hull
+    if buffer > 0:
+        buffered = concave_hull.buffer(buffer)
 
     # Step 5: Convert concave hull back to GeoDataFrame
-    concave_hull_gdf = gpd.GeoDataFrame(geometry=[concave_hull], crs=gdf_utm.crs)
+    concave_hull_gdf = gpd.GeoDataFrame(geometry=[buffered], crs=gdf_utm.crs)
 
     concave_hull_gdf_4326 = concave_hull_gdf.to_crs(epsg=4326)  # Convert back to WGS84
     # Step 7: Convert the concave hull back to GeoJSON
