@@ -73,6 +73,10 @@ class SekolahUpload(generics.CreateAPIView):
         description = request.data.get("description")
         file = request.FILES.get("file")
 
+        zonasi = request.data.get("zonasi")
+        if isinstance(zonasi, str):
+            zonasi = zonasi.lower() == "true"
+
         if not name:
             return Response(
                 {"error": "Name is required."}, status=status.HTTP_400_BAD_REQUEST
@@ -97,7 +101,12 @@ class SekolahUpload(generics.CreateAPIView):
             bbox = calculate_bbox_from_csv_points(csv_data)
             # Save metadata (name, description) to the SekolahMetadata model
             metadata = SekolahMetadata.objects.create(
-                name=name, level=level, type=type, description=description, bbox=bbox
+                name=name,
+                level=level,
+                type=type,
+                description=description,
+                bbox=bbox,
+                zonasi=zonasi,
             )
 
             for row in csv_data:

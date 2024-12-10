@@ -7,6 +7,7 @@ class SekolahMetadata(models.Model):
     name = models.CharField(max_length=50)
     level = models.CharField(max_length=50)
     type = models.CharField(max_length=50)
+    zonasi = models.BooleanField(default=False)
     description = models.CharField(max_length=255)
     bbox = models.PolygonField(null=True, blank=True)
 
