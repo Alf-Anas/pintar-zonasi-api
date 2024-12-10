@@ -7,6 +7,7 @@ from .views import (
     ProjectSaveLayer,
     ProjectUpdateStatus,
     ProjectListZonasi,
+    ProjectFindZonasi,
 )
 
 urlpatterns = [
@@ -25,6 +26,11 @@ urlpatterns = [
         "project/zonasi/",
         ProjectListZonasi.as_view(),
         name="project-list-zonasi",
+    ),
+    path(
+        "project/zonasi/<str:pk>/",
+        ProjectFindZonasi.as_view(),
+        name="project-find-zonasi",
     ),
     path(
         "project/<str:pk>/",

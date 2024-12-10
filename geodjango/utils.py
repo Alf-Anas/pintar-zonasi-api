@@ -242,3 +242,43 @@ def geojson_line_length(geometry):
     length_meters = gdf_projected.length[0]
     length_km = round(length_meters / 1000, 3)
     return length_km
+
+
+def add_unique_items(target_list: list, new_items: list):
+    """
+    Add items to the target list if they do not already exist based on 'id'.
+
+    Args:
+    - target_list: List of dictionaries representing the existing data.
+    - new_items: List of dictionaries representing the new data to add.
+    """
+    existing_ids = {item["id"] for item in target_list}
+    for item in new_items:
+        if item["id"] not in existing_ids:
+            target_list.append(item)
+
+
+def calculate_distance(start_lat, start_lon, end_lat, end_lon):
+    """
+    Calculate the distance between two points using GeoPandas.
+
+    Parameters:
+        start_lat, start_lon: Latitude and longitude of the first point in decimal degrees.
+        end_lat, end_lon: Latitude and longitude of the second point in decimal degrees.
+
+    Returns:
+        Distance in meters.
+    """
+    # Create points for the two locations
+    point1 = Point(start_lon, start_lat)
+    point2 = Point(end_lon, end_lat)
+
+    # Create a GeoDataFrame
+    gdf = gpd.GeoDataFrame(geometry=[point1, point2], crs="EPSG:4326")
+
+    # Convert the GeoDataFrame to a projected CRS (e.g., UTM for accurate distance in meters)
+    gdf = gdf.to_crs(epsg=3857)  # Web Mercator (meters)
+
+    # Calculate distance in meters
+    distance = gdf.geometry[0].distance(gdf.geometry[1])
+    return distance
