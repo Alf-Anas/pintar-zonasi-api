@@ -6,6 +6,7 @@ from .views import (
     ProjectMetadataDelete,
     ProjectSaveLayer,
     ProjectUpdateStatus,
+    ProjectListZonasi,
 )
 
 urlpatterns = [
@@ -20,6 +21,11 @@ urlpatterns = [
         name="project-delete",
     ),
     path("project/", ProjectMetadataList.as_view(), name="project-list"),
+    path(
+        "project/zonasi/",
+        ProjectListZonasi.as_view(),
+        name="project-list-zonasi",
+    ),
     path(
         "project/<str:pk>/",
         ProjectMetadataDetail.as_view(),

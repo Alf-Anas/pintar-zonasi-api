@@ -143,3 +143,18 @@ class ProjectUpdateStatus(generics.RetrieveAPIView):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class ProjectListZonasi(generics.ListAPIView):
+    queryset = ProjectMetadata.objects.all().order_by("-created_at")
+    serializer_class = ProjectMetadataSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        project_level = self.request.query_params.get("level")
+        print(project_level)
+        if project_level:
+            queryset = queryset.filter(level=project_level, status="PUBLISHED")
+        else:
+            queryset = queryset.filter(status="PUBLISHED")
+        return queryset
